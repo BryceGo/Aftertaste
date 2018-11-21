@@ -25,8 +25,6 @@ def start_listening():
     finally:
         listenerHandler.stop()
 
-
-
 if __name__ == "__main__":
     t1 = threading.Thread(target=start_listening)
     t1.start()
