@@ -43,7 +43,7 @@ def execute_commands(sock):
             print("ERROR IN EXECUTE_COMMANDS FUNCTION")
 
 HOST = '127.0.0.1'
-PORT = 5000
+PORT = 5001
 retry = True
 while(retry):
     try:
