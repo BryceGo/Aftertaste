@@ -1,8 +1,6 @@
-import socket, threading, time
+import socket, threading, time, sys
 import _thread as thread
 import subprocess
-
-PORT = 5001
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -39,6 +37,8 @@ class baseServer():
 
 
 if __name__ == "__main__":
+    PORT = int(sys.argv[1])
+    print("Creating server on port: {}".format(PORT))
     server = baseServer(PORT)
     listener = threading.Thread(target=server.listen_connections)
     listener.start()

