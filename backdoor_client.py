@@ -17,9 +17,12 @@ def input_collection(sock):
             thread_lock.acquire()
             command_list.append(command)
             thread_lock.release()
-        except:
+        except socket.timeout:
             print("RECEIVE TIMED OUT..")
             pass
+        except:
+            stop = True
+            return False
 
 def execute_commands(sock):
     global command_list, thread_lock, stop
@@ -29,7 +32,6 @@ def execute_commands(sock):
             command = None
             #Reads the command_list pipe, needs to obtain thread lock
             thread_lock.acquire()
-            print(len(command_list))
             if (len(command_list) > 0):
                 command = command_list.pop(0)
             thread_lock.release()
@@ -41,11 +43,12 @@ def execute_commands(sock):
                 sock.sendall(data)
         except:
             print("ERROR IN EXECUTE_COMMANDS FUNCTION")
+            stop = True
+            return
 
 HOST = '127.0.0.1'
 PORT = 5001
-retry = True
-while(retry):
+while(True):
     try:
         sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         sock.settimeout(3)
@@ -55,11 +58,14 @@ while(retry):
         sender = threading.Thread(target=execute_commands,args=(sock,))
         receiver.start()
         sender.start()
-        while(True):
-            pass
-        retry = False
+
+        receiver.join()
+        sender.join()
+
+        print("Error in one of the receiver or sender...")
+        stop = False
+        time.sleep(1)
     except:
-        retry = True
         time.sleep(3)
         print("Connection Failed")
     finally:
