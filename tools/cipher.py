@@ -11,10 +11,19 @@ class cipher:
 		h.update(IV.encode())
 		self.IV = h.digest()
 
+	def pad(self,text):
+		_padVar = AES.block_size - (len(text) % AES.block_size)
+		return text + (_padVar * chr(_padVar))
+
+	def unpad(self,text):
+		return text[:-ord(text[len(text)-1:])]
+
 	def encrypt(self,plaintext):
+		plaintext = self.pad(plaintext)
 		obj = AES.new(self.key,AES.MODE_CBC, self.IV)
 		return obj.encrypt(plaintext)
 
 	def decrypt(self,ciphertext):
 		obj = AES.new(self.key,AES.MODE_CBC,self.IV)
-		return obj.decrypt(ciphertext)
+		plaintext = obj.decrypt(ciphertext)
+		return self.unpad(plaintext)
