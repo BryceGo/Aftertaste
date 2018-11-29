@@ -7,3 +7,6 @@ TODO:
 -Add functionality of taking pictures on the webcam
 -Add functionality of recording videos on the webcam
 -Add functionality of streaming videos on the webcam
+
+pip install pycrypto
+pip install pynput
