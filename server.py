@@ -1,6 +1,7 @@
 import socket, threading, time, sys
 import _thread as thread
 import subprocess
+import tools.cipher as cipher
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -9,14 +10,16 @@ class baseServer():
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.settimeout(3)
         self.sock.bind(('',port))
         self.sock.listen(listen)
 
     def listen_connections(self):
         while(True):
-            print("waiting for connection....")
-            self.connection = self.sock.accept()
-
+            try:
+                self.connection = self.sock.accept()
+            except socket.timeout:
+                continue
             print("Obtained a new connection...")
 
             self.connection_lock.acquire()
@@ -32,6 +35,31 @@ class baseServer():
         while(True):
             command = input()
             conn.send(command.encode())
+
+    def startConnection(self, connection):
+        #Enter Needed connection to start
+        while(True):
+            try:
+                IV = cipher.generateIV()
+                connection[0].send('SRT'.encode()+IV)
+                response = connection[0].recv(2048)
+                if (response[3:]==IV):
+                    break
+                else:
+                    print("Configuration error. Socket returned a different Initialization Vector")
+                    continue
+            except socket.timeout:
+                continue
+            except:
+                print("Error, connection from client lost.")
+                return
+
+        receiver = threading.Thread(target=self.receiver,args=(connection[0],))
+        sender = threading.Thread(target=self.sender,args=(connection[0],))
+
+        receiver.start()
+        sender.start()
+
     def __del__(self):
         self.sock.close()
 
@@ -48,12 +76,7 @@ if __name__ == "__main__":
     server.connection_lock.acquire()
     connection = server.connection_list.pop(0)
     server.connection_lock.release()
+    server.startConnection(connection)
 
-    receiver = threading.Thread(target=server.receiver,args=(connection[0],))
-    sender = threading.Thread(target=server.sender,args=(connection[0],))
-    print("Ready...")
-
-    receiver.start()
-    sender.start()
     while(True):
         pass

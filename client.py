@@ -48,6 +48,31 @@ def execute_commands(sock):
             stop = True
             return
 
+def start_client(sock):
+    global stop
+    IV = None
+    while(True):
+        try:
+            response = sock.recv(2048)
+            if response[:3] == 'SRT'.encode():
+                IV = response[3:]
+                sock.send('ACK'.encode()+IV)
+                break
+        except socket.timeout:
+            print("Socket timed out on handshake..")
+
+
+    receiver = threading.Thread(target=input_collection,args=(sock,))
+    sender = threading.Thread(target=execute_commands,args=(sock,))
+    receiver.start()
+    sender.start()
+
+    receiver.join()
+    sender.join()
+    print("Error in one of the receiver or sender...")
+    stop = False
+    time.sleep(1)
+
 HOST = '127.0.0.1'
 PORT = 5001
 
@@ -57,17 +82,7 @@ while(True):
         sock.settimeout(3)
         sock.connect((HOST,PORT))
         print("Connection successful...")
-        receiver = threading.Thread(target=input_collection,args=(sock,))
-        sender = threading.Thread(target=execute_commands,args=(sock,))
-        receiver.start()
-        sender.start()
-
-        receiver.join()
-        sender.join()
-
-        print("Error in one of the receiver or sender...")
-        stop = False
-        time.sleep(1)
+        start_client(sock)
     except:
         time.sleep(3)
         print("Connection Failed")
