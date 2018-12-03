@@ -1,7 +1,7 @@
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
 from pyftpdlib.authorizers import DummyAuthorizer
-import tools.cipher
+import settings.keys as keys
 import ftplib
 
 class serverHandler(FTPHandler):
@@ -16,15 +16,19 @@ class serverHandler(FTPHandler):
 
 def ftpserver():
     authorizer = DummyAuthorizer()
-    authorizer.add_anonymous('.')
+    for i in range(0,len(keys.USER)):
+        authorizer.add_user(keys.USER[i],keys.PASSWORD[i],keys.SERVER_DIR,perm='w')
 
     handler = serverHandler
     handler.authorizer = authorizer
 
-    server = FTPServer(('0.0.0.0',5002),handler)
+    server = FTPServer((keys.IP_ADDRESS_SERVER,keys.PORT),handler)
     server.serve_forever()
 
-def ftpclient():
+def ftpUpload(fileName):
     ftp = ftplib.FTP('')
-    ftp.connect('192.168.1.72',5002)
-    ftp.login()
+    ftp.connect(keys.IP_ADDRESS_CLIENT,keys.PORT)
+    ftp.login(keys.USER[0],keys.PASSWORD[0])
+    ftp.storbinary('STOR '+fileName,open(fileName,'rb'))
+    ftp.quit()
+    return
