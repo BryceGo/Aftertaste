@@ -17,7 +17,7 @@ class serverHandler(FTPHandler):
 def ftpserver():
     authorizer = DummyAuthorizer()
     for i in range(0,len(keys.USER)):
-        authorizer.add_user(keys.USER[i],keys.PASSWORD[i],keys.SERVER_DIR,perm='w')
+        authorizer.add_user(keys.USER[i],keys.PASSWORD[i],keys.SERVER_DIR[i],perm=keys.PERMISSIONS[i])
 
     handler = serverHandler
     handler.authorizer = authorizer
@@ -32,3 +32,10 @@ def ftpUpload(fileName):
     ftp.storbinary('STOR '+fileName,open(fileName,'rb'))
     ftp.quit()
     return
+
+def ftpDownload(fileName):
+    ftp = ftplib.FTP('')
+    ftp.connect(keys.IP_ADDRESS_CLIENT,keys.PORT)
+    ftp.login(keys.USER[1],keys.PASSWORD[1])
+    ftp.retrbinary('RETR ' + fileName, open(fileName,'wb').write)
+    ftp.quit()
