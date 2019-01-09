@@ -37,7 +37,7 @@ class baseServer():
             command = input()
             conn.send(cipherClass.encrypt(command.encode()))
 
-    def startConnection(self, connection,key=keys.PASSWORD):
+    def startConnection(self, connection,key=keys.CONN_PASSWORD):
         #Enter Needed connection to start
         while(True):
             try:
