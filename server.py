@@ -30,11 +30,15 @@ class baseServer():
     def receiver(self, conn, cipherClass):
         while(True):
             response = conn.recv(2048)
+            if len(response) <= 0:
+                continue
             print(cipherClass.decrypt(response).decode())
 
     def sender(self, conn, cipherClass):
         while(True):
             command = input()
+            if len(command) <= 0:
+                continue
             conn.send(cipherClass.encrypt(command.encode()))
 
     def startConnection(self, connection,key=keys.CONN_PASSWORD):

