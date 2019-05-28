@@ -24,3 +24,11 @@ DLD (param)	- Make the client download files from ftp server
 
 UPT (param)	- update the backdoor
 		- param = filename of the update in the ftp server
+
+Protocol
+
+Dictionary data
+
+CMD 	- Command
+PLD 	- Payload
+IV		- Initialization Vector for the encryption

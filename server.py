@@ -3,6 +3,8 @@ import _thread as thread
 import subprocess
 import tools.cipher as cipher
 import settings.keys as keys
+import json
+import tools.packetassembler as pa
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -35,29 +37,49 @@ class baseServer():
             print(cipherClass.decrypt(response).decode())
 
     def sender(self, conn, cipherClass):
+        packet = pa.packet()
         while(True):
+            pa.clear()
             command = input()
             if len(command) <= 0:
                 continue
-            conn.send(cipherClass.encrypt(command.encode()))
+
+            IV = cipher.generateIV()
+            pa.store_iv(IV)
+            pa.store_command("EXE")
+            pa.store_payload(command)
+            data = pa.get_packet()
+            conn.send(cipherClass.encrypt(data,IV))
+
+    # def authenticate(self, connection, key=keys.CONN_PASSWORD):
+    #     packet = pa.packet()
+    #     payload = cipher.generateIV()
+        
+    #     IV = cipher.generateIV()
+    #     packet.store_command("AUTH")
+    #     packet.store_iv(IV)
+    #     # packet.store_payload(payload)
+
+    #   # connection.send(packet.get_packet())
 
     def startConnection(self, connection,key=keys.CONN_PASSWORD):
         #Enter Needed connection to start
-        while(True):
-            try:
-                IV = cipher.generateIV()
-                connection[0].send('SRT'.encode()+IV)
-                response = connection[0].recv(2048)
-                if (response[3:]==IV):
-                    break
-                else:
-                    print("Configuration error. Socket returned a different Initialization Vector")
-                    continue
-            except socket.timeout:
-                continue
-            except:
-                print("Error, connection from client lost.")
-                return
+        # while(True):
+        #     try:
+        #         IV = cipher.generateIV()
+
+        #         connection[0].send('SRT'.encode()+IV)
+        #         response = connection[0].recv(2048)
+        #         if (response[3:]==IV):
+        #             break
+        #         else:
+        #             print("Configuration error. Socket returned a different Initialization Vector")
+        #             continue
+        #     except socket.timeout:
+        #         continue
+        #     except:
+        #         print("Error, connection from client lost.")
+        #         return
 
         cipherClass = cipher.cipher(key=key,IV=IV,generatedIV=True)
 
@@ -69,7 +91,6 @@ class baseServer():
 
     def __del__(self):
         self.sock.close()
-
 
 if __name__ == "__main__":
     PORT = int(sys.argv[1])
