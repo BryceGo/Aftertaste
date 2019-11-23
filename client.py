@@ -143,7 +143,7 @@ def start_client(sock, key=keys.CONN_PASSWORD):
     stop = False
     time.sleep(1)
 
-HOST = '192.168.1.81'
+HOST = '127.0.0.1'
 PORT = 5001
 
 while(True):
