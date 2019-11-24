@@ -4,11 +4,12 @@ from Crypto.Random import random
 
 #Encryption and decryption needs to have encoded input
 class cipher:
-	def __init__(self,key,IV,generatedIV=False):
+	def __init__(self,key,IV=None,generatedIV=True):
 		h = SHA256.new()
 		h.update(key.encode())
 		self.key = h.digest()
-		if not(generatedIV):
+
+		if generatedIV == False:
 			h = MD5.new()
 			h.update(IV.encode())
 			self.IV = h.digest()

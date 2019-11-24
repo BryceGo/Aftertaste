@@ -6,7 +6,7 @@ from tools.cipher import generateIV
 class p_manager:
     def __init__(self,
                 cipher_class,
-                IV = None,
+                IV = '',
                 CMD = '',
                 PLD = ''):
         self.cipher_class = cipher_class
@@ -14,7 +14,7 @@ class p_manager:
 
         self.packet = {}
         self.packet['END'] = END_FLAG_FALSE
-        self.packet['IV'] = None
+        self.packet['IV'] = ''
         self.packet['CMD'] = ''
         self.packet['PLD'] = ''
 
@@ -22,6 +22,8 @@ class p_manager:
             self.store_command(CMD)
         if PLD != '':
             self.store_payload(PLD)
+        if IV != '':
+            self.store_iv(IV)
 
     def generate_IV(self):
         if self.IV == None:
