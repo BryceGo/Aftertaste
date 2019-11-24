@@ -4,8 +4,10 @@ import subprocess
 import tools.cipher as cipher
 import settings.keys as keys
 import json
-import tools.packetassembler as pa
 from tools.packet_manager import p_manager
+import time
+from tools.dictionary import SEND_DELAY, MAX_SOCK_RECV
+from tools.utils import packet_send, packet_recv
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -33,6 +35,7 @@ class baseServer():
     def receiver(self, conn, cipherClass):
         pm = p_manager(cipher_class = cipherClass)
         while(True):
+            pm.clear()
             response = conn.recv(2048)
             if not response:
                 return
@@ -62,37 +65,40 @@ class baseServer():
             for pack in send_packets:
                 conn.send(pack)
 
-    # def authenticate(self, connection, key=keys.CONN_PASSWORD):
-    #     packet = pa.packet()
-    #     payload = cipher.generateIV()
-        
-    #     IV = cipher.generateIV()
-    #     packet.store_command("AUTH")
-    #     packet.store_iv(IV)
-    #     # packet.store_payload(payload)
+    def authenticate(self, conn, cipherClass):
+        while(True):
+            try:
+                password = cipher.generateIV().hex()
+                packet_send(command="SRT",
+                            payload=password,
+                            cipherClass=cipherClass,
+                            conn=conn)
 
-    #   # connection.send(packet.get_packet())
+
+                packet = packet_recv(cipherClass=cipherClass,
+                            conn=conn,
+                            decrypt=False)
+
+                if packet["CMD"] == "ACK" and packet["PLD"] == password:
+                    break
+                else:
+                    print("Configuration error. Socket returned a different Initialization Vector")
+                    time.sleep(1)
+                    continue
+            except socket.timeout:
+                continue
+            except:
+                print("Error, connection from client lost.")
+                return False
+        print("Target authenticated.")
+        return True
 
     def startConnection(self, connection,key=keys.CONN_PASSWORD):
         #Enter Needed connection to start
-        # while(True):
-        #     try:
-        #         IV = cipher.generateIV()
+        cipherClass = cipher.cipher(key=key)
 
-        #         connection[0].send('SRT'.encode()+IV)
-        #         response = connection[0].recv(2048)
-        #         if (response[3:]==IV):
-        #             break
-        #         else:
-        #             print("Configuration error. Socket returned a different Initialization Vector")
-        #             continue
-        #     except socket.timeout:
-        #         continue
-        #     except:
-        #         print("Error, connection from client lost.")
-        #         return
-
-        cipherClass = cipher.cipher(key=key,IV=IV,generatedIV=True)
+        if (self.authenticate(connection[0], cipherClass) == False):
+            return
 
         receiver = threading.Thread(target=self.receiver,args=(connection[0],cipherClass))
         sender = threading.Thread(target=self.sender,args=(connection[0],cipherClass))
