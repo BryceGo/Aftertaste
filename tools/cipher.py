@@ -24,16 +24,22 @@ class cipher:
 		return text[:-ord(text[len(text)-1:])]
 
 	def encrypt(self,plaintext, IV=None):
-		if IV!=None:
-			self.IV = IV
+		if IV==None:
+			initV = self.IV
+		else:
+			initV = IV
+
 		plaintext = self._pad(plaintext)
-		obj = AES.new(self.key,AES.MODE_CBC, self.IV)
+		obj = AES.new(self.key,AES.MODE_CBC, initV)
 		return obj.encrypt(plaintext)
 
 	def decrypt(self,ciphertext, IV=None):
-		if IV!=None:
-			self.IV = IV
-		obj = AES.new(self.key,AES.MODE_CBC,self.IV)
+		if IV==None:
+			initV = self.IV
+		else:
+			initV = IV
+
+		obj = AES.new(self.key,AES.MODE_CBC, initV)
 		plaintext = obj.decrypt(ciphertext)
 		return self._unpad(plaintext)
 

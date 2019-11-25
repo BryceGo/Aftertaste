@@ -33,37 +33,29 @@ class baseServer():
             self.connection_lock.release()
 
     def receiver(self, conn, cipherClass):
-        pm = p_manager(cipher_class = cipherClass)
         while(True):
-            pm.clear()
-            response = conn.recv(2048)
-            if not response:
-                return
-            if len(response) <= 0:
+            try:
+                packet = packet_recv(cipherClass=cipherClass,
+                            conn=conn,
+                            decrypt=True)
+            except:
                 continue
-            pm.load_packet(response)
-            while(not(pm.is_last())):
-                fol_response = conn.recv(2048)
-                if not fol_response:
-                    return
-                pm.concat(fol_response)
-            pm.decrypt_packet()
-            print(pm.packet['PLD'])
+            print(packet['PLD'])
 
     def sender(self, conn, cipherClass):
-        pm = p_manager(cipher_class = cipherClass)
         while(True):
-            pm.clear()
             command = input()
             if len(command) <= 0:
                 continue
+            try:
+                packet_send(command='CMD',
+                            payload=command,
+                            cipherClass=cipherClass,
+                            conn=conn,
+                            encrypt=True)
+            except Exception as e:
+                print("Error sending command.")
 
-            pm.store_command("EXE")
-            pm.store_payload(command)
-            pm.encrypt_packet()
-            send_packets = pm.get_packets()
-            for pack in send_packets:
-                conn.send(pack)
 
     def authenticate(self, conn, cipherClass):
         while(True):

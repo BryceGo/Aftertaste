@@ -79,7 +79,7 @@ class p_manager:
     def _decrypt_section(self, section):
         valid = self.cipher_class.decrypt(bytes.fromhex(self.packet[section]), self.IV)
         try:
-            self.packet[section] = valid.decode()
+            self.packet[section] = valid.decode('utf-8')
         except:
             self.packet[section] = valid.hex()
 

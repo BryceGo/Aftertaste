@@ -21,7 +21,12 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
 def packet_recv(cipherClass, conn, decrypt=True):
     pm = p_manager(cipherClass)
     response = conn.recv(MAX_SOCK_RECV)
-    pm.load_packet(response)
+    
+    try:
+        pm.load_packet(response)
+    except:
+        raise Exception("Error loading packet")
+
     while pm.is_last() == False:
         pm.concat(conn.recv(MAX_SOCK_RECV))
     if decrypt == True:
