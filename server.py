@@ -97,7 +97,12 @@ class baseServer():
 
                     chosen = int(packet[PK_PAYLOAD_FLAG])
                     self.connection_lock.acquire()
-                    connection = self.connection_list.pop(chosen)
+                    if chosen in self.connection_list:
+                        connection = self.connection_list.pop(chosen)
+                    else:
+                        self.connection_lock.release()
+                        print("Not in any of the connections")
+                        continue
                     self.connection_lock.release()
 
                     self.active_connection = connection
@@ -119,6 +124,7 @@ class baseServer():
                         self.send_list.put(packet)
                 print("Done.")
             except Exception as e:
+                raise e
                 print(e)
                 continue
 
