@@ -83,13 +83,13 @@ class baseServer():
                 packet[PK_COMMAND_FLAG] = message[0].upper()
                 packet[PK_PAYLOAD_FLAG] = message[1] if len(message) == 2 else ''
 
-                if packet[PK_COMMAND_FLAG] == "LST":
+                if packet[PK_COMMAND_FLAG] == COMMAND_SERVER_LIST:
                     self.connection_lock.acquire()
                     for connection_number in self.connection_list.keys():
                         print(str(connection_number) + " " + str(self.connection_list[connection_number][1]))
                     self.connection_lock.release()
 
-                elif packet[PK_COMMAND_FLAG] == "CHS":
+                elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_CHOOSE:
 
                     if self.active_connection != None:
                         print("Stop current active connection first.")
@@ -109,14 +109,31 @@ class baseServer():
                     connection_thread = threading.Thread(target=self.startConnection, args=(connection,))
                     connection_thread.start()
 
-                elif packet[PK_COMMAND_FLAG] == "EXT":
+                elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_SIGNOUT:
                     self.stop = True
-                elif packet[PK_COMMAND_FLAG] == "CHK":
+                elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_CHECK_CON:
                     #Checks active connection
-                    print("Current connection is : {}".format(self.active_connection))
 
-                elif packet[PK_COMMAND_FLAG] == "HLP":
-                    pass
+                    if self.active_connection == None:
+                        output = "None"
+                    else:
+                        output = self.active_connection[1]
+
+                    print("Current connection is : {}".format(output))
+
+                elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_HELP:
+                    help_text = '''
+{0} - List all current connections.
+{1} - Choose a connection. Add a parameter with the connection number.
+{2} - Sign out of current active connection.
+{3} - Check current active connection.
+{4} - Open help text.
+                    '''.format(COMMAND_SERVER_LIST,
+                                COMMAND_SERVER_CHOOSE,
+                                COMMAND_SERVER_SIGNOUT,
+                                COMMAND_SERVER_CHECK_CON,
+                                COMMAND_SERVER_HELP)
+                    print(help_text)
                 else:
                     if self.active_connection == None:
                         print("No active connection.")
