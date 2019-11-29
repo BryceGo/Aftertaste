@@ -83,8 +83,6 @@ class client:
             # send_list.put(cipherClass.encrypt("Forkbomb started...".encode()))
             # forkbomb.bomb()
 
-
-
     def parse_command(self, message):
         if isinstance(message,dict) == False:
             print("WARNING!, passed a weird output")
@@ -118,8 +116,6 @@ class client:
             return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
             self.send_list.put(return_message)
         return
-
-
 
     def execute_commands(self):
         return_message = {PK_COMMAND_FLAG:COMMAND_RESPONSE, PK_PAYLOAD_FLAG:''}
