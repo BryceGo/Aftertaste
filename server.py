@@ -42,14 +42,17 @@ class baseServer():
             count += 1
 
     def receiver(self, conn, cipherClass):
+        leftovers = b''
         while(self.stop == False):
             try:
-                packet = packet_recv(cipherClass=cipherClass,
+                packet, leftovers = packet_recv(cipherClass=cipherClass,
                             conn=conn,
-                            decrypt=True)
+                            decrypt=True,
+                            leftovers=leftovers)
 
                 print(packet[PK_PAYLOAD_FLAG])
             except socket.timeout:
+                leftovers = b''
                 continue
             except:
                 self.stop = True
@@ -68,6 +71,7 @@ class baseServer():
                                 conn=conn,
                                 encrypt=True)
             except Exception as e:
+                raise e
                 print("Error sending command.")
                 self.stop = True
                 return
@@ -160,7 +164,7 @@ class baseServer():
                             conn=conn)
 
 
-                packet = packet_recv(cipherClass=cipherClass,
+                packet, _ = packet_recv(cipherClass=cipherClass,
                             conn=conn,
                             decrypt=False)
 

@@ -10,30 +10,47 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
     pm = p_manager(cipherClass)
     pm.store_command(command)
     pm.store_payload(payload)
+
     if encrypt == True:
         pm.encrypt_packet()
 
     for i in pm.get_packets():
-        conn.send(i)
+        length = len(i)
+        length = "{0:04d}".format(length).encode()
+        length_sent = conn.send(length+i)
+
+
         time.sleep(SEND_DELAY)
 
     del pm
     return True
 
-def packet_recv(cipherClass, conn, decrypt=True):
+def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
+
+    def get_recv(conn, leftovers):
+        response = leftovers + conn.recv(MAX_SOCK_RECV)
+        length = int(response[0:4].decode())
+
+        data = response[4:4+length]
+        leftover = response[4+length::]
+
+        return data, leftover
+
     pm = p_manager(cipherClass)
-    response = conn.recv(MAX_SOCK_RECV)
+    
+    data, leftovers = get_recv(conn=conn, leftovers=leftovers)
     
     try:
-        pm.load_packet(response)
+        pm.load_packet(data)
     except Exception as e:
         raise Exception("Error loading packet")
 
     while pm.is_last() == False:
-        pm.concat(conn.recv(MAX_SOCK_RECV))
+        data, leftovers = get_recv(conn=conn, leftovers=leftovers)
+        pm.concat(data)
     if decrypt == True:
         pm.decrypt_packet()
-    return pm.packet
+    return pm.packet, leftovers
 
 def file_send(filename, sending_queue):
 
@@ -51,7 +68,7 @@ def file_send(filename, sending_queue):
 
         read_bytes = file.read(BYTES_TO_READ)
         new_bytes = read_bytes
-        while (new_bytes != b''):
+        while (True):
             count += 1
             new_bytes = file.read(BYTES_TO_READ)
             read_bytes += new_bytes
@@ -69,13 +86,13 @@ def file_send(filename, sending_queue):
                 packet = {}
                 packet[PK_COMMAND_FLAG] = "FTP"
                 packet[PK_PAYLOAD_FLAG] = ftp_payload
-
                 sending_queue.put(packet)
 
                 read_bytes = b''
 
                 if new_bytes == b'':
                     break
+
     except Exception as e:
         raise e
     finally:

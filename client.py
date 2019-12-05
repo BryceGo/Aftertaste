@@ -23,11 +23,14 @@ class client:
 
     def authenticate(self):
         conn = self.sock
+        leftovers = b''
+
         while(True):
             try:
-                packet = packet_recv(cipherClass=self.cipherClass,
+                packet, leftovers = packet_recv(cipherClass=self.cipherClass,
                                     conn=conn,
-                                    decrypt=True)
+                                    decrypt=True,
+                                    leftovers=leftovers)
 
                 if packet[PK_COMMAND_FLAG] != COMMAND_START:
                     continue
@@ -42,6 +45,7 @@ class client:
                     break
             except socket.timeout:
                 print("Socket timed out on handshake..")
+                leftovers = b''
         print("Handshake complete...")
 
     def exe_tool(self, message):
@@ -108,7 +112,7 @@ class client:
             else:
                 return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                 return_message[PK_PAYLOAD_FLAG] = "Error receiving file. Something went wrong"
-            self.send_list.put(return_message)
+            # self.send_list.put(return_message)
 
         elif message[PK_COMMAND_FLAG] == "HLP":
             return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
@@ -158,15 +162,18 @@ class client:
                 self.stop = True
                 return
     def input_collection(self):
+        leftovers = b''
         while (not(self.stop)):
             try:
-                packet = packet_recv(cipherClass=self.cipherClass,
+                packet, leftovers = packet_recv(cipherClass=self.cipherClass,
                                     conn=self.sock,
-                                    decrypt=True)
+                                    decrypt=True,
+                                    leftovers=leftovers)
 
                 self.parse_command(packet)
 
             except socket.timeout:
+                leftovers = b''
                 continue
             except Exception as e:
                 self.stop = True
@@ -213,7 +220,7 @@ class client:
                 print("Error in one of the receiver or sender...")
                 self.stop = False
                 time.sleep(1)
-            except:
+            except Exception as e:
                 print("Connection Failed.")
                 continue
             finally:
