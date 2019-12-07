@@ -31,3 +31,5 @@ COMMAND_SERVER_HELP = "HLP"
 
 
 SERVICE_NAME = "ServiceExecutable"
+
+debug = True
