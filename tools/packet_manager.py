@@ -59,6 +59,8 @@ class p_manager:
             self.packet[PK_PAYLOAD_FLAG] = payload.hex()
         elif isinstance(payload, str):
             self.packet[PK_PAYLOAD_FLAG] = payload
+        elif isinstance(payload, dict):
+            self.packet[PK_PAYLOAD_FLAG] = json.dumps(payload)
         else:
             return False
         return True
