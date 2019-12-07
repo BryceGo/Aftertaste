@@ -17,9 +17,20 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
     for i in pm.get_packets():
         length = len(i)
         length = "{0:04d}".format(length).encode()
-        length_sent = conn.send(length+i)
-
-
+        data = length + i
+        retry = 0
+        while(True):
+            try:
+                length_sent = conn.send(data)
+                break
+            except Exception as e:
+                print(e)
+                retry += 1
+                print("Retried")
+                time.sleep(SEND_DELAY)
+                if (retry >= 5):
+                    break
+                continue
         time.sleep(SEND_DELAY)
 
     del pm
@@ -29,6 +40,9 @@ def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
 
     def get_recv(conn, leftovers):
         response = leftovers + conn.recv(MAX_SOCK_RECV)
+        if len(response) == 0:
+            print(response)
+
         length = int(response[0:4].decode())
 
         data = response[4:4+length]
@@ -46,7 +60,7 @@ def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
         raise Exception("Error loading packet")
 
     while pm.is_last() == False:
-        data, leftovers = get_recv(conn=conn, leftovers=leftovers)
+        data, leftovers = get_recv(conn=conn, leftovers=leftovers)       
         pm.concat(data)
     if decrypt == True:
         pm.decrypt_packet()

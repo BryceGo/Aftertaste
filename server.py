@@ -62,6 +62,7 @@ class baseServer():
     def sender(self, conn, cipherClass):
         while(self.stop == False):
             try:
+                time.sleep(0.1)
                 if (not(self.send_list.empty())):
                     packet = self.send_list.get()
 
@@ -172,7 +173,7 @@ class baseServer():
                     break
                 else:
                     print("Configuration error. Socket returned a different Initialization Vector")
-                    time.sleep(1)
+                    time.sleep(DELAY)
                     continue
             except socket.timeout:
                 continue

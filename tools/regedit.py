@@ -1,4 +1,5 @@
 import winreg, os, sys
+from tools.dictionary import SERVICE_NAME
 
 # placeStartup
 # Description:
@@ -8,7 +9,7 @@ import winreg, os, sys
 # Return:
 # 	True				- Success
 # 	False				- Failed
-def placeStartup(name="HKEY_WINDOWS"):
+def placeStartup(name=SERVICE_NAME):
 	try:
 		key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run")
 		winreg.SetValueEx(key, name,0,winreg.REG_SZ,os.getcwd() +"\\"+os.path.basename(sys.argv[0]))
@@ -25,7 +26,7 @@ def placeStartup(name="HKEY_WINDOWS"):
 # Return:
 # 	True				- Success
 # 	False				- Failed
-def removeStartup(name="HKEY_WINDOWS"):
+def removeStartup(name=SERVICE_NAME):
 	try:
 		key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run")
 		winreg.DeleteValue(key,name)
