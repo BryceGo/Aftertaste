@@ -9,6 +9,7 @@ import queue
 from tools.packet_manager import p_manager
 import time
 from tools.dictionary import *
+from tools.exception_handler import exception_handler
 from tools.utils import packet_send, packet_recv, file_send
 
 class baseServer():
@@ -54,7 +55,8 @@ class baseServer():
             except socket.timeout:
                 leftovers = b''
                 continue
-            except:
+            except Exception as e:
+                exception_handler(e)
                 self.stop = True
                 print("Error in receiver.")
                 return
@@ -72,7 +74,7 @@ class baseServer():
                                 conn=conn,
                                 encrypt=True)
             except Exception as e:
-                raise e
+                exception_handler(e)
                 print("Error sending command.")
                 self.stop = True
                 return
@@ -152,6 +154,7 @@ class baseServer():
                         self.send_list.put(packet)
                 print("Done.")
             except Exception as e:
+                exception_handler(e)
                 print(e)
                 continue
 

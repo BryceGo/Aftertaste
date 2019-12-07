@@ -1,6 +1,7 @@
 from tools.packet_manager import *
 from tools.cipher import *
 from tools.dictionary import *
+from tools.exception_handler import exception_handler
 from os.path import basename
 import time
 import json
@@ -24,7 +25,7 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
                 length_sent = conn.send(data)
                 break
             except Exception as e:
-                print(e)
+                exception_handler(e)
                 retry += 1
                 print("Retried")
                 time.sleep(SEND_DELAY)
@@ -57,6 +58,7 @@ def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
     try:
         pm.load_packet(data)
     except Exception as e:
+        exception_handler(e)
         raise Exception("Error loading packet")
 
     while pm.is_last() == False:
@@ -128,7 +130,7 @@ def file_recv(packet):
         file.close()
         return True
     except Exception as e:
-        raise e
+        exception_handler(e)
         return False
     finally:
         file.close()
