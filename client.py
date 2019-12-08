@@ -27,7 +27,7 @@ def mem_random(min_kilobytes, max_kilobytes):
 
 
 class client:
-    def __init__(self, cipherClass, HOST='127.0.0.1', PORT=5002):
+    def __init__(self, cipherClass, HOST='127.0.0.1', PORT=61869):
         time.sleep(random.randrange(2,8))
 
         if DEBUG == False:

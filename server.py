@@ -216,7 +216,7 @@ class baseServer():
 
 
 def main():
-    PORT = 5002
+    PORT = 61869
     print("Creating a server on port {}".format(PORT))
     server = baseServer(port=PORT,
                         listen=5)
