@@ -40,7 +40,14 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
 def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
 
     def get_recv(conn, leftovers):
-        response = leftovers + conn.recv(MAX_SOCK_RECV)
+
+        response = conn.recv(MAX_SOCK_RECV)
+
+        if response == b'':
+            raise Exception("Socket closed")
+        
+        response = leftovers + response
+
         if len(response) == 0:
             print(response)
 
@@ -48,6 +55,9 @@ def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
 
         data = response[4:4+length]
         leftover = response[4+length::]
+
+        while(length > len(data)):
+            data += conn.recv(length-len(data))
 
         return data, leftover
 

