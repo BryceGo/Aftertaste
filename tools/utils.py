@@ -23,6 +23,10 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
         while(True):
             try:
                 length_sent = conn.send(data)
+
+                if length_sent != int(length)+4:
+                    print(length_sent, int(length)+4)
+                    # Add warning or resend
                 break
             except Exception as e:
                 exception_handler(e)

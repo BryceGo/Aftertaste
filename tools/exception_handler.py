@@ -1,5 +1,5 @@
 
-from tools.dictionary import debug
+from tools.dictionary import DEBUG
 def exception_handler(error):
-	if debug == True:
+	if DEBUG == True:
 		raise error

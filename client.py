@@ -30,7 +30,7 @@ class client:
     def __init__(self, cipherClass, HOST='127.0.0.1', PORT=5002):
         time.sleep(random.randrange(2,8))
 
-        if debug == False:
+        if DEBUG == False:
             self.list = mem_random(1000,5000)
         
         print("Done")

@@ -190,21 +190,24 @@ class baseServer():
         #Enter Needed connection to start
         cipherClass = cipher.cipher(key=key)
         connection[0].settimeout(1)
+        try:
+            if (self.authenticate(connection[0], cipherClass) == False):
+                return
 
-        if (self.authenticate(connection[0], cipherClass) == False):
-            return
+            receiver = threading.Thread(target=self.receiver,args=(connection[0],cipherClass))
+            sender = threading.Thread(target=self.sender,args=(connection[0],cipherClass))
 
-        receiver = threading.Thread(target=self.receiver,args=(connection[0],cipherClass))
-        sender = threading.Thread(target=self.sender,args=(connection[0],cipherClass))
+            receiver.start()
+            sender.start()
 
-        receiver.start()
-        sender.start()
-
-        receiver.join()
-        sender.join()
-        self.stop = False
-        self.active_connection = None
-        connection[0].close()
+            receiver.join()
+            sender.join()
+            self.stop = False
+        except Exception as e:
+            exception_handler(e)
+        finally:
+            self.active_connection = None
+            connection[0].close()
         return
 
     def __del__(self):
