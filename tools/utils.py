@@ -98,7 +98,7 @@ def file_send(filename, sending_queue):
     start = True
     read_bytes = b''
     new_bytes = b''
-    action = "CREATE"
+    action = FTP_COMMAND_CREATE
 
     try:
         file = open(filename, "rb")
@@ -112,16 +112,16 @@ def file_send(filename, sending_queue):
 
             if (count*BYTES_TO_READ >= MAX_BYTES_PER_PACKET or new_bytes == b''):
                 count = 0
-                action = "CREATE" if start == True else "APPEND"
+                action = FTP_COMMAND_CREATE if start == True else FTP_COMMAND_APPEND
                 start = False
 
                 ftp_payload = {}
-                ftp_payload["FNAME"] = filename
-                ftp_payload["ACT"] = action
-                ftp_payload["FILE"] = read_bytes.hex()
+                ftp_payload[FTP_PK_FILENAME] = filename
+                ftp_payload[FTP_PK_ACTION] = action
+                ftp_payload[FTP_PK_PAYLOAD] = read_bytes.hex()
 
                 packet = {}
-                packet[PK_COMMAND_FLAG] = "FTP"
+                packet[PK_COMMAND_FLAG] = COMMAND_FTP
                 packet[PK_PAYLOAD_FLAG] = ftp_payload
                 sending_queue.put(packet)
 
@@ -138,15 +138,15 @@ def file_send(filename, sending_queue):
 
 def file_recv(packet):
     ftp_payload = json.loads(packet[PK_PAYLOAD_FLAG])
-    filename = basename(ftp_payload["FNAME"])
+    filename = basename(ftp_payload[FTP_PK_FILENAME])
 
     try:
-        if ftp_payload["ACT"] == "CREATE":
+        if ftp_payload[FTP_PK_ACTION] == FTP_COMMAND_CREATE:
             file = open(filename, "wb")
         else:
             file = open(filename, "ab")
 
-        payload = bytes.fromhex(ftp_payload["FILE"])
+        payload = bytes.fromhex(ftp_payload[FTP_PK_PAYLOAD])
         file.write(payload)
         file.close()
         return True
