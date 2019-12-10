@@ -10,7 +10,7 @@ from tools.packet_manager import p_manager
 import time
 from tools.dictionary import *
 from tools.exception_handler import exception_handler
-from tools.utils import packet_send, packet_recv, file_send
+from tools.utils import packet_send, packet_recv, file_send, file_recv
 
 class baseServer():
     def __init__(self, port, listen=1):
@@ -25,6 +25,7 @@ class baseServer():
 
         self.active_connection = None
         self.send_list = queue.Queue()
+        self.receive_list = queue.Queue()
         self.stop = False
 
 
@@ -42,6 +43,24 @@ class baseServer():
             self.connection_lock.release()
             count += 1
 
+    def executor(self):
+        while(self.stop == False):
+            try:
+                time.sleep(DELAY)
+                if (self.receive_list.empty() == False):
+                    message = self.receive_list.get()
+
+                    if message[PK_COMMAND_FLAG] == COMMAND_FTP:
+                        file_recv(message)
+                    else:
+                        print(message[PK_PAYLOAD_FLAG])
+                    
+            except Exception as e:
+                exception_handler(e)
+                print("Error excuting command.")
+                self.stop = True
+                return
+
     def receiver(self, conn, cipherClass):
         leftovers = b''
         while(self.stop == False):
@@ -51,7 +70,7 @@ class baseServer():
                             decrypt=True,
                             leftovers=leftovers)
 
-                print(packet[PK_PAYLOAD_FLAG])
+                self.receive_list.put(packet)
             except socket.timeout:
                 leftovers = b''
                 continue
@@ -64,8 +83,8 @@ class baseServer():
     def sender(self, conn, cipherClass):
         while(self.stop == False):
             try:
-                time.sleep(0.1)
-                if (not(self.send_list.empty())):
+                time.sleep(DELAY)
+                if (self.send_list.empty() == False):
                     packet = self.send_list.get()
 
                     packet_send(command=packet[PK_COMMAND_FLAG],
@@ -196,12 +215,15 @@ class baseServer():
 
             receiver = threading.Thread(target=self.receiver,args=(connection[0],cipherClass))
             sender = threading.Thread(target=self.sender,args=(connection[0],cipherClass))
+            executor = threading.Thread(target=self.executor)
 
             receiver.start()
             sender.start()
+            executor.start()
 
             receiver.join()
             sender.join()
+            executor.join()
             self.stop = False
         except Exception as e:
             exception_handler(e)
