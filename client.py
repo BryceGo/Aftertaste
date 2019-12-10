@@ -151,11 +151,11 @@ class client:
                     try:
                         file_send(message[PK_PAYLOAD_FLAG], self.send_list)
                         return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
-                        return_message[PK_PAYLOAD_FLAG] = "File sent"
+                        return_message[PK_PAYLOAD_FLAG] = "Done Sending"
                     except Exception as e:
                         return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                         return_message[PK_PAYLOAD_FLAG] = str(e)
-                    self.send_list(return_message)
+                    self.send_list.put(return_message)
                 elif message[PK_COMMAND_FLAG] == "HLP":
                     return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                     return_message[PK_PAYLOAD_FLAG] = """

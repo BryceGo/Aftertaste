@@ -47,8 +47,8 @@ class baseServer():
         while(self.stop == False):
             try:
                 time.sleep(DELAY)
-                if (self.send_list.empty() == False):
-                    message = self.send_list.get()
+                if (self.receive_list.empty() == False):
+                    message = self.receive_list.get()
 
                     if message[PK_COMMAND_FLAG] == COMMAND_FTP:
                         file_recv(message)
@@ -70,7 +70,7 @@ class baseServer():
                             decrypt=True,
                             leftovers=leftovers)
 
-                self.receiv_list.put(packet)
+                self.receive_list.put(packet)
             except socket.timeout:
                 leftovers = b''
                 continue
