@@ -4,14 +4,16 @@ from tools.dictionary import *
 from tools.exception_handler import exception_handler
 from os.path import basename
 from shutil import copyfile
-from win32api import MoveFileEx
-import winreg
-import win32con
 import sys
 import time
 import json
 import os
 import random
+
+if os.name == 'nt':
+    from win32api import MoveFileEx
+    import winreg
+    import win32con
 
 def packet_send(command, payload, cipherClass, conn, encrypt=True):
     delay = SEND_DELAY
