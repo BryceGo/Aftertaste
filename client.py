@@ -169,6 +169,12 @@ class client:
                     """
                     self.send_list.put(return_message)
 
+                elif message[PK_COMMAND_FLAG] == COMMAND_EXIT:
+                    return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
+                    return_message[PK_PAYLOAD_FLAG] = "Shutdown process initiated. {}".format(sys.argv[0])
+                    self.send_list.put(return_message)
+                    os._exit(0)
+
                 elif message[PK_COMMAND_FLAG] == COMMAND_DELETE:
                     return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
                     return_message[PK_PAYLOAD_FLAG] = "Delete process initiated. {}".format(sys.argv[0])
