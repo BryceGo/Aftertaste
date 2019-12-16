@@ -254,6 +254,7 @@ class client:
     def start_client(self):
         while (True):
             try:
+                time.sleep(1)
                 self.connect()
                 self.authenticate()
 
@@ -271,7 +272,6 @@ class client:
                 executor.join()
                 print("Error in one of the receiver or sender...")
                 self.stop = False
-                time.sleep(1)
             except Exception as e:
                 exception_handler(e)
                 print("Connection Failed.")
