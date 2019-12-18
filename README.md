@@ -71,3 +71,5 @@ Issue command line commands using
 ```sh
 CMD [shell command]
 ```
+
+![alt text](img/working_demo.gif)
