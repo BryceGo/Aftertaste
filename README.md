@@ -4,6 +4,8 @@ Aftertaste is a python-based reverse shell with numerous tools for educational p
 
 ![alt text](img/client_server.png)
 
+![alt text](img/working_demo.gif)
+
 # Features
 
 - Arbitrary command execution
@@ -19,6 +21,7 @@ Aftertaste is a python-based reverse shell with numerous tools for educational p
 | Windows 10 | ✔ | ✔|
 | Windows 8.1 | ✔ | ✔ |
 | Ubuntu | ✘ | ✔|
+
 Python 3.6+
 
 ### Installation
@@ -50,7 +53,7 @@ The exe file will be in the dist folder
 Run the exe on the target machine
 
 Running the exe file the first time will copy itself into the folder:
->C:\Users\%user%\AppData\Local\
+>C:\\Users\\%user%\\AppData\\Local\\
 
 
 ### Server usage
@@ -72,4 +75,38 @@ Issue command line commands using
 CMD [shell command]
 ```
 
-![alt text](img/working_demo.gif)
+### Server Commands
+```
+CMD :param:                         - Executes a windows shell command on a target's machine
+
+EXE :param:                         - Executes pre-created features. Example programs:
+    keylogger :param1:              - Starts the keylogger.
+                                    - param1 is the filename to store the data
+    placestartup :param1: :param2:  - Places a file into the startup registry (So it will run on startup)
+                                    - param1 is the registry key name
+                                    - param2 is the path to the file
+    removestartup :param1:          - Removes the file from the startup registry
+                                    - param1 is the registry key
+
+FTP :param:                         - Transfers a file from the server to the target machine
+                                    - param is the path to the file relative to the current directory
+
+RFTP :param:                        - Transfer a file from the client to the server
+                                    - param is the path of the file relative to the client directory
+DEL                                 - Deletes the exe and removes the windows registry key from the target machine
+
+EXT                                 - Turns off the client from the target machine
+
+LST                                 - List all current client connections that has connected to the server
+
+CHS :param:                         - Choose the current connection
+                                    - param is the number associated with the connection (Use LST to list connections)
+
+SGN                                 - Signs the server out from the client (breaks the connection)
+
+CHK                                 - Checks the server if it currently has a chosen connection
+
+HLP                                 - Lists the help
+```
+
+![alt text](img/server_usage.gif)
