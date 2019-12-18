@@ -1,6 +1,9 @@
 # Aftertaste
 
-Aftertaste is a python-based reverse shell with numerous tools for educational purposes. It allows arbitrary command execution of a client's machine, keystroke logging, and regsitry edits.
+Aftertaste is a python-based reverse shell with numerous tools for educational purposes. It allows arbitrary command execution of a client's machine, keystroke logging, and registry edits.
+
+![alt text](img/client_server.png)
+
 # Features
 
 - Arbitrary command execution
@@ -33,7 +36,9 @@ $ pip install -r requirements.txt
 Edit ./settings/keys.py to change the server's ip address and password
 
 >CONN_IP_ADDRESS = "127.0.0.1"
+
 >CONN_PASSWORD = "password"
+
 >CONN_PORT=5000
 
 Compile client.py on windows by running build.bat
