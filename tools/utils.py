@@ -53,11 +53,11 @@ def packet_send(command, payload, cipherClass, conn, encrypt=True):
 def packet_recv(cipherClass, conn, decrypt=True, leftovers=b''):
 
     def get_recv(conn, leftovers):
-
-        response = conn.recv(MAX_SOCK_RECV)
-
-        if response == b'':
-            raise Exception("Socket closed")
+        response = b''
+        if len(leftovers) == 0 or (int(leftovers[0:4].decode()) > len(leftovers[4::])):
+            response = conn.recv(MAX_SOCK_RECV)
+            if response == b'':
+                raise Exception("Socket closed")
         
         response = leftovers + response
 
